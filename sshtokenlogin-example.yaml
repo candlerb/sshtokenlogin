@@ -1,0 +1,13 @@
+# Local listen address:port for browser redirect response.
+# First available port is used.  By default, a random port is used.
+#listen_addresses: [127.0.0.1:8000, 127.0.0.1:18000]
+
+servers:
+  default:
+    host: mysshca.example.com:2222
+    user: fred
+
+    # You MUST verify the host key of the remote server, so you're
+    # not sending openid credentials to an attacker, and not granting
+    # access to your ssh agent
+    #host_key:

@@ -19,15 +19,19 @@ var (
 )
 
 // Run server on first available listen address, return the redirectURI
-func runServer(listenAddresses []string, responseChan chan string) (string, error) {
+func runServer(listenAddresses []string, responseChan chan Response) (string, error) {
 	http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
-		code := r.URL.Query().Get("code")
-		if code == "" {
+		response := Response{
+			Code:  r.URL.Query().Get("code"),
+			State: r.URL.Query().Get("state"),
+		}
+		if response.Code == "" {
 			http.Error(w, "<p>Missing response code</p>", http.StatusBadRequest)
 		} else {
+			// Note: modern browsers don't allow Javascript to close the window/tab
 			fmt.Fprintf(w, "<p>Code accepted</p>")
 		}
-		responseChan <- code
+		responseChan <- response
 	})
 	for _, addr := range listenAddresses {
 		listener, err := net.Listen("tcp", addr)
@@ -80,7 +84,7 @@ func main() {
 	}
 
 	// Prepare HTTP server for receiving OIDC response code
-	responseChan := make(chan string)
+	responseChan := make(chan Response)
 	redirectURI, err := runServer(settings.ListenAddresses, responseChan)
 	if err != nil {
 		die("Failed to start http: %v", err)

@@ -9,6 +9,7 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/terminal"
 	"io"
+	"math/rand"
 	"net"
 	"net/url"
 	"os"
@@ -16,9 +17,14 @@ import (
 	"time"
 )
 
+type Response struct {
+	Code  string
+	State string
+}
+
 // Open SSH connection with agent forwarding;
 // Handle keyboardinteractive challenge/response.
-func connectToServer(s *Server, agent_path, redirectURI string, responseChan chan string) error {
+func connectToServer(s *Server, agent_path, redirectURI string, responseChan chan Response) error {
 	console := bufio.NewScanner(os.Stdin)
 
 	certChecker := ssh.CertChecker{
@@ -102,7 +108,7 @@ func connectToServer(s *Server, agent_path, redirectURI string, responseChan cha
 
 // Try to handle challenge/response via web
 func browserChallenge(instruction string, questions []string, redirectURI string,
-	responseChan chan string) []string {
+	responseChan chan Response) []string {
 	if len(questions) != 1 {
 		return nil
 	}
@@ -111,6 +117,15 @@ func browserChallenge(instruction string, questions []string, redirectURI string
 		return nil
 	}
 	query := u.Query()
+	if query.Get("client_id") == "" || query.Get("response_type") != "code" {
+		// Not a usable OpenID Connect URL
+		return nil
+	}
+	state := query.Get("state")
+	if state == "" {
+		state = fmt.Sprintf("%016X", rand.Uint64())
+		query.Set("state", state)
+	}
 	query.Set("redirect_uri", redirectURI)
 	u.RawQuery = query.Encode()
 	err = browser.OpenURL(u.String())
@@ -118,9 +133,18 @@ func browserChallenge(instruction string, questions []string, redirectURI string
 		fmt.Fprintln(os.Stderr, "Unable to open browser:", err)
 		return nil
 	}
-	code := <-responseChan
-	code = fmt.Sprintf("%s %s", code, redirectURI)
-	return []string{code}
+	for response := range responseChan {
+		if response.Code == "" {
+			fmt.Fprintln(os.Stderr, "Callback: Missing code")
+			continue
+		}
+		if response.State != state {
+			fmt.Fprintln(os.Stderr, "Callback: Unexpected state")
+			continue
+		}
+		return []string{fmt.Sprintf("%s %s", response.Code, redirectURI)}
+	}
+	return nil
 }
 
 // Extract the IDP auth URL out of the prompt

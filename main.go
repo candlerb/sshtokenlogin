@@ -29,9 +29,6 @@ func runServer(listenAddresses []string, responseChan chan string) (string, erro
 		}
 		responseChan <- code
 	})
-	if len(listenAddresses) == 0 {
-		listenAddresses = defaultListenAddresses
-	}
 	for _, addr := range listenAddresses {
 		listener, err := net.Listen("tcp", addr)
 		if err == nil {
@@ -54,7 +51,7 @@ func main() {
 	var err error
 
 	// Parse args
-	config := os.Getenv("SSHCALOGIN_CONFIG")
+	config := os.Getenv("SSHTOKENLOGIN_CONFIG")
 	if config == "" {
 		config, err = homedir.Expand(defaultConfigFile)
 		if err != nil {
@@ -84,14 +81,14 @@ func main() {
 
 	// Prepare HTTP server for receiving OIDC response code
 	responseChan := make(chan string)
-	redirectURI, err := runServer(nil, responseChan)
+	redirectURI, err := runServer(settings.ListenAddresses, responseChan)
 	if err != nil {
 		die("Failed to start http: %v", err)
 	}
 
 	for _, server := range servers {
-		conf, ok := settings.Servers[server]
-		if !ok {
+		conf := settings.Servers[server]
+		if conf == nil {
 			die("Server '%s' not present in config", server)
 		}
 		err = connectToServer(conf, agent_path, redirectURI, responseChan)

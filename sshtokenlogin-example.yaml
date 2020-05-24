@@ -1,7 +1,3 @@
-# Local listen address:port for browser redirect response.
-# First available port is used.  By default, a random port is used.
-#listen_addresses: [127.0.0.1:8000, 127.0.0.1:18000]
-
 servers:
   default:
     host: mysshca.example.com:2222
@@ -10,4 +6,5 @@ servers:
     # You MUST verify the host key of the remote server, so you're
     # not sending openid credentials to an attacker, and not granting
     # access to your ssh agent
-    #host_key:
+    host_keys: |
+      ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKDOXwbHsqe/79w2il001srnEQcQPMe4tQ2D8GZtauxHmuZ4PtDF7eSSHnxe4gEd5MPJYPPndlgZgqmDY2f2Y2Q= root@golang

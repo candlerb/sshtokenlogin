@@ -2,12 +2,14 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"github.com/pkg/browser"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/terminal"
 	"io"
+	"net"
 	"net/url"
 	"os"
 	"regexp"
@@ -16,8 +18,27 @@ import (
 
 // Open SSH connection with agent forwarding;
 // Handle keyboardinteractive challenge/response.
-func connectToServer(s Server, agent_path, redirectURI string, responseChan chan string) error {
+func connectToServer(s *Server, agent_path, redirectURI string, responseChan chan string) error {
 	console := bufio.NewScanner(os.Stdin)
+
+	certChecker := ssh.CertChecker{
+		IsHostAuthority: func(key ssh.PublicKey, address string) bool {
+			for _, cakey := range s.trustedCAKeys {
+				if bytes.Equal(key.Marshal(), cakey.Marshal()) {
+					return true
+				}
+			}
+			return false
+		},
+		HostKeyFallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			for _, hostkey := range s.trustedHostKeys {
+				if bytes.Equal(key.Marshal(), hostkey.Marshal()) {
+					return nil
+				}
+			}
+			return fmt.Errorf("host public key not matched")
+		},
+	}
 	sshConfig := &ssh.ClientConfig{
 		User: s.User,
 		Auth: []ssh.AuthMethod{
@@ -29,8 +50,7 @@ func connectToServer(s Server, agent_path, redirectURI string, responseChan chan
 				return keyboardChallenge(instruction, questions, echos, console)
 			}),
 		},
-		//HostKeyCallback: ssh.FixedHostKey(host_key),
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // FIXME
+		HostKeyCallback: certChecker.CheckHostKey,
 		BannerCallback:  ssh.BannerDisplayStderr(),
 		Timeout:         30 * time.Second,
 	}

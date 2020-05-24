@@ -9,8 +9,9 @@ import (
 )
 
 type Settings struct {
-	ListenAddresses []string           `yaml:"listen_addresses"`
-	Servers         map[string]*Server `yaml:"servers"`
+	ListenAddresses     []string           `yaml:"listen_addresses"`
+	RedirectURIHostname string             `yaml:"redirect_uri_hostname"`
+	Servers             map[string]*Server `yaml:"servers"`
 }
 
 type Server struct {
@@ -41,6 +42,9 @@ func SettingsLoad(yamlFilePath string) (Settings, error) {
 
 	if len(settings.ListenAddresses) == 0 {
 		settings.ListenAddresses = defaultListenAddresses
+	}
+	if settings.RedirectURIHostname == "" {
+		settings.RedirectURIHostname = "localhost"
 	}
 
 	// Check entries

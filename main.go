@@ -19,7 +19,7 @@ var (
 )
 
 // Run server on first available listen address, return the redirectURI
-func runServer(listenAddresses []string, responseChan chan Response) (string, error) {
+func runServer(listenAddresses []string, redirectURIHostname string, responseChan chan Response) (string, error) {
 	http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
 		response := Response{
 			Code:  r.URL.Query().Get("code"),
@@ -40,7 +40,7 @@ func runServer(listenAddresses []string, responseChan chan Response) (string, er
 				panic(http.Serve(listener, nil))
 			}()
 			listenPort := listener.Addr().(*net.TCPAddr).Port
-			return fmt.Sprintf("http://localhost:%d/callback", listenPort), nil
+			return fmt.Sprintf("http://%s:%d/callback", redirectURIHostname, listenPort), nil
 		}
 	}
 	return "", fmt.Errorf("Unable to bind to any listenAddress")
@@ -89,7 +89,7 @@ func main() {
 
 	// Prepare HTTP server for receiving OIDC response code
 	responseChan := make(chan Response)
-	redirectURI, err := runServer(settings.ListenAddresses, responseChan)
+	redirectURI, err := runServer(settings.ListenAddresses, settings.RedirectURIHostname, responseChan)
 	if err != nil {
 		die("Failed to start http: %v", err)
 	}

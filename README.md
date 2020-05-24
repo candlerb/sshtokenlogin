@@ -23,9 +23,14 @@ connect to.  If not specified then the entry called "default" is used.
 ## Configuration
 
 ```
-# By default, a random port on localhost is used.  If you want to override
-# this, then the first available binding from the list you provide is used.
+# By default, a random port is opened to accept the response from the
+# identity provider.  You can override this by giving a list of
+# address:port.  The first one which is free is used.
 #listen_addresses: [127.0.0.1:8000, 127.0.0.1:18000]
+#
+# Normally the redirect URI is http://localhost:<port>/callback.
+# You can use this setting to replace "localhost".
+#redirect_uri_hostname: 127.0.0.1
 
 servers:
   default:

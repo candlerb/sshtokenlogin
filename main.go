@@ -74,13 +74,17 @@ func main() {
 	// Read config
 	settings, err := SettingsLoad(config)
 	if err != nil {
-		die("%v", err)
+		die("Loading settings: %v", err)
 	}
 
-	// Locate local agent socket
+	// Open agent connection
 	agent_path := os.Getenv("SSH_AUTH_SOCK")
 	if agent_path == "" {
 		die("SSH_AUTH_SOCK not set.  This program requires access to an ssh agent")
+	}
+	agent_conn, err := NewRestrictedAgent(agent_path)
+	if err != nil {
+		die("Connecting to local agent: %v", err)
 	}
 
 	// Prepare HTTP server for receiving OIDC response code
@@ -95,7 +99,7 @@ func main() {
 		if conf == nil {
 			die("Server '%s' not present in config", server)
 		}
-		err = connectToServer(conf, agent_path, redirectURI, responseChan)
+		err = connectToServer(conf, agent_conn, redirectURI, responseChan)
 		if err != nil {
 			die("Server '%s': %v", server, err)
 		}

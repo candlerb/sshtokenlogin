@@ -24,7 +24,7 @@ type Response struct {
 
 // Open SSH connection with agent forwarding;
 // Handle keyboardinteractive challenge/response.
-func connectToServer(s *Server, agent_path, redirectURI string, responseChan chan Response) error {
+func connectToServer(s *Server, agent_conn agent.ExtendedAgent, redirectURI string, responseChan chan Response) error {
 	console := bufio.NewScanner(os.Stdin)
 
 	certChecker := ssh.CertChecker{
@@ -66,9 +66,9 @@ func connectToServer(s *Server, agent_path, redirectURI string, responseChan cha
 		return fmt.Errorf("Dial error: %v", err)
 	}
 
-	err = agent.ForwardToRemote(client, agent_path)
+	err = agent.ForwardToAgent(client, agent_conn)
 	if err != nil {
-		return fmt.Errorf("Unable to open local agent: %v", err)
+		return fmt.Errorf("Unable to forward to agent: %v", err)
 	}
 	session, err := client.NewSession()
 	if err != nil {

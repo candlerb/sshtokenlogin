@@ -1,7 +1,7 @@
 # sshtokenlogin
 
 Inspired by [kubelogin](https://github.com/int128/kubelogin), this is a companion
-client app to sshtokenca which will:
+client app to [sshtokenca](https://github.com/candlerb/sshtokenca) which will:
 
 - open an ssh connection to sshtokenca
 - open your browser to go to your identity provider
@@ -74,7 +74,7 @@ ssh-keygen -F mysshca.example.com:2222
 ssh-keygen -F '[192.0.2.1]:2222'
 ```
 
-On the flip side: if you are the *recipient* a `sshtokenlogin.yaml` file
+On the flip side: if you are the *recipient* of an `sshtokenlogin.yaml` file
 claiming to be from your organisation, then at least check that the target
 "host" is one you recognise.
 

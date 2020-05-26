@@ -83,3 +83,7 @@ against the originator, so you know that the host key has not been tampered
 with.  If you cannot do that, then the first time you run sshtokenlogin with
 this configuration, you should do it from a trusted network.  If the
 connection is successful then the host key is correct.
+
+# License
+
+This project is licensed under the [MIT Licence](LICENCE).

@@ -90,17 +90,26 @@ func connectToServer(s *Server, agent_conn agent.ExtendedAgent, redirectURI stri
 		go io.Copy(os.Stderr, stderr)
 	}
 
-	// Request agent forwarding - currently required
-	// to trigger certificate issuance
+	// CA may wait for this before they issue the cert
 	err = agent.RequestAgentForwarding(session)
 	if err != nil {
 		return fmt.Errorf("Unable to request agent forwarding: %v", err)
 	}
 
-	// Wait for server to close
+	// Start a shell session so we can see the response
+	err = session.Shell()
+	if err != nil && err != io.EOF {
+		return fmt.Errorf("shell: %v", err)
+	}
+
+	err = session.Wait()
+	if err != nil && err != io.EOF {
+		return fmt.Errorf("session: %v", err)
+	}
+
 	err = client.Conn.Wait()
 	if err != nil && err != io.EOF {
-		return fmt.Errorf("Error waiting for close: %v", err)
+		return fmt.Errorf("connection: %v", err)
 	}
 
 	return nil
